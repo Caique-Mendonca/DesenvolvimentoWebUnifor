@@ -1,57 +1,86 @@
-// server/controllers/UserController.js
-import { hashSenha, verificarSenha } from  '../utils/bcrypt.js';
-import { gerarToken } from '../utils/jwt.js';
-import User from '../models/User.js';
+// src/controllers/userController.js
+import prisma from '../config/prisma.js';
 
-
-export const login = async (req, res) => {
-  const { email, senha } = req.body;
+// Listar todos os usuários
+const getAllUsers = async (req, res) => {
   try {
-    const usuario = await User.findOne({ email });
-    if (!usuario) return res.status(404).json({ erro: 'Usuário não encontrado' });
-    
-    const senhaValida = await verificarSenha(senha, usuario.password);
-    if (!senhaValida) return res.status(401).json({ erro: 'Senha incorreta' });
-
-    const token = gerarToken(usuario);
-    res.json({ token, usuario: { name: usuario.name, email: usuario.email } });
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro no login', err:JSON.stringify(err) });
+    const users = await prisma.user.findMany({
+      include: {
+        posts: true,
+      },
+    });
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    return res.status(500).json({ error: 'Erro interno no servidor ao buscar usuários.' });
   }
 };
-// ###########################
 
-export const listarUsers = async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+// Obter usuário por ID
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) },
+      include: { posts: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    return res.status(500).json({ error: 'Erro interno no servidor.' });
+  }
 };
 
-export const criarUser = async (req, res) => {
-  const { name, email, tipo, password} = req.body;
+// Criar novo usuário
+const createUser = async (req, res) => {
+  try {
+    const { name, email } = req.body;
 
-  const senhaHash = await hashSenha(password); //Aplicação do Bcrypt para criptografar a senha
-  
-  const novo = new User({ name, email, tipo, password:senhaHash});
-  await novo.save();
-  res.status(201).json(novo);
+    if (!email) {
+      return res.status(400).json({ error: 'O campo email é obrigatório.' });
+    }
 
+    const newUser = await prisma.user.create({
+      data: { name, email },
+    });
+
+    return res.status(201).json(newUser);
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Este e-mail já está cadastrado.' });
+    }
+    console.error('Erro ao criar usuário:', error);
+    return res.status(500).json({ error: 'Erro interno no servidor ao criar usuário.' });
+  }
 };
 
-export const obterUser = async (req, res) => {
-  const us = await User.findById(req.params.id);
-  if (!us) return res.status(404).json({ erro: 'User não encontrado' });
-  res.json(us);
+// Deletar usuário
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.user.delete({
+      where: { id: Number(id) },
+    });
+
+    return res.status(200).json({ message: 'Usuário removido com sucesso.' });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Usuário não encontrado para exclusão.' });
+    }
+    console.error('Erro ao deletar usuário:', error);
+    return res.status(500).json({ error: 'Erro interno no servidor.' });
+  }
 };
 
-export const atualizarUser = async (req, res) => {
-  const { name, email, tipo, password} = req.body;
-  const senhaHash = await hashSenha(password); //Aplicação do Bcrypt para criptografar a senha
-  const us = await User.findByIdAndUpdate(req.params.id, { name, email, tipo, password:senhaHash}, { new: true });
-  res.json(us);
+export {
+  getAllUsers,
+  getUserById,
+  createUser,
+  deleteUser,
 };
-
-export const deletarUser = async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.status(204).end();
-};
- 

@@ -2,13 +2,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
+import routes from './routes/index.js';
 // import { connectDB} from './config/database.js';
 
 // Importando Rotas
 // import usuarioRoutes from './routes/usuarioRoutes.js';
-import agendamentoRoutes from './routes/agendamentoRoutes.js'; 
-import userRoutes from './routes/userRoutes.js'; 
+// import agendamentoRoutes from './routes/agendamentoRoutes.js'; 
+// import userRoutes from './routes/userRoutes.js'; 
 
 dotenv.config();
 const app = express();
@@ -34,8 +34,11 @@ app.get('/', (req, res) => {
 
   // Usar as rotas
 // app.use('/api/usuarios', usuarioRoutes);
-app.use('/api/agendamentos', agendamentoRoutes);
-app.use('/api/users', userRoutes);
+// app.use('/api/agendamentos', agendamentoRoutes.js);
+// app.use('/api/users', userRoutes.js);
+
+// Injeção do barramento de rotas da API
+app.use('/api', routes);
 
 // Rota coringa: deve ser a **última**
 app.use((req, res) => {
