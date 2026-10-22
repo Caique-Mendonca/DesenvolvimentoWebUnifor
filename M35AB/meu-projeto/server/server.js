@@ -7,7 +7,9 @@ import { connectDB} from './config/database.js';
 
 // Importando Rotas
 import usuarioRoutes from './routes/usuarioRoutes.js';
-import agendamentoRoutes from './routes/agendamentoRoutes.js'; 
+import agendamentoRoutes from './routes/agendamentoRoutes.js';
+import filmeRoutes from './routes/filmeRoutes.js';
+import carroRoutes from './routes/carroRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -24,6 +26,8 @@ app.get('/', (req, res) => {
   // Usar as rotas
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/agendamentos', agendamentoRoutes);
+app.use('/api/filmes', filmeRoutes);
+app.use('/api/carros', carroRoutes);
 
 
 // Rota coringa: deve ser a **última**
